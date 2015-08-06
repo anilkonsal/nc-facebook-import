@@ -7,8 +7,8 @@ class FacebookImport {
     public function __construct($url = '') {
         $path = dirname(dirname(dirname(dirname(dirname(__FILE__)))));
         require_once( $path . '/wp-load.php' );
-        
-        if(!empty($url)) {
+
+        if (!empty($url)) {
             $this->setUrl($url);
         }
     }
@@ -87,26 +87,28 @@ class FacebookImport {
             'post_status' => 'private',
             'post_type' => 'facebook_post',
             'ping_status' => 'closed',
-            'post_parent' => 0, // Sets the parent of the new post, if any. Default 0.
+            'post_parent' => 0, 
             'post_date' => date('Y-m-d H:i:s', $timestamp),
             'post_date_gmt' => gmdate('Y-m-d H:i:s', $timestamp),
             'comment_status' => 'closed',
         );
 
+        if (!get_page_by_title($data->name, 'OBJECT', 'facebook_post')) {
+            $postId = wp_insert_post($postArr, $error);
+            if ($postId) {
+                // insert post meta
+                add_post_meta($postId, '_fi_type', $data->type);
+                add_post_meta($postId, '_fi_status_type', $data->status_type);
+                add_post_meta($postId, '_fi_picture', $data->picture);
+                add_post_meta($postId, '_fi_link', $data->link);
+                add_post_meta($postId, '_fi_source_category', $data->from->category);
+                add_post_meta($postId, '_fi_source_name', $data->from->name);
+                add_post_meta($postId, '_fi_caption', $data->caption);
+            }
 
-        $postId = wp_insert_post($postArr, $error);
-        if ($postId) {
-            // insert post meta
-            add_post_meta($postId, '_fi_type', $data->type);
-            add_post_meta($postId, '_fi_status_type', $data->status_type);
-            add_post_meta($postId, '_fi_picture', $data->picture);
-            add_post_meta($postId, '_fi_link', $data->link);
-            add_post_meta($postId, '_fi_source_category', $data->from->category);
-            add_post_meta($postId, '_fi_source_name', $data->from->name);
-            add_post_meta($postId, '_fi_caption', $data->caption);
+            return $postId;
         }
-        
-        return $postId;
+        return false;
     }
 
     /**
@@ -128,7 +130,7 @@ class FacebookImport {
             return $commentIds;
         }
     }
-    
+
     /**
      * Function to insert a single comment for a post
      * @param object $comment
